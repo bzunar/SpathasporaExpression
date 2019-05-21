@@ -1,0 +1,244 @@
+---
+title: "*Spathaspora passalidarum*: Highly and Constitutively Expressed Genes"
+author: "Bojan Zunar"
+date: "`r format(Sys.time(), '%d %m %Y')`"
+package: spathasporaExpression
+output: 
+  BiocStyle::html_document:
+    toc: true
+    toc_float: true
+vignette: >
+  %\VignetteIndexEntry{Highly Expressed Genes in Spathaspora passalidarum}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+<style>
+pre {
+  overflow-x: auto;
+}
+pre code {
+  word-wrap: normal;
+  white-space: pre;
+}
+</style>
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  tidy = FALSE
+)
+
+options(width = 999)
+```
+
+# The Goal
+
+This analysis identifies highly expressed genes in yeast *Spathaspora passalidarum*, both as it grows on glucose and on xylose. Data profile gene expression with whole-genome, species-specific 385K microarrays (Roche: NimbleGen). Details are described in [Wohlbach et al. (2011)](https://doi.org/10.1073/pnas.1103039108). 
+
+# Differential Expression
+
+First, we load the required packages.
+
+```{r setup, message = FALSE, warning = FALSE}
+library(spathasporaExpression)
+
+library(Biobase)
+library(GEOquery)
+library(kableExtra)
+library(limma)
+library(oligo)
+library(phylotools)
+library(rappdirs)
+library(tidyverse)
+```
+
+We download pre-processed data from the original study and extract those specific for *S. passalidarum*.
+
+```{r getData, eval = FALSE}
+# extract only data specific for S. passalidarum
+Sp <- GEOquery::getGEO("GSE24858")[["GSE24858-GPL11079_series_matrix.txt.gz"]]
+```
+
+We clean up the data and perform analysis of differential expression, ordering the genes by their average expression, from the most to the least expressed.
+
+```{r diffExpression}
+# clean up the data
+Sp$type <- factor(c("glucose", "glucose", "glucose", "xylose", "xylose", "xylose"))
+
+# differential expression
+design <- stats::model.matrix(~ Sp$type)
+
+top <- Sp %>%
+    limma::lmFit(design) %>%
+    limma::eBayes() %>%
+    limma::topTable(sort.by = "AveExpr", number = 6000)
+
+# results
+top %>% 
+    head(5) %>%
+    round(digits = 3) %>%
+    knitr::kable() %>%
+    kableExtra::kable_styling(fixed_thead = T, position = "left",
+                              bootstrap_options = c("striped", "hover", 
+                                                    "condensed", "responsive"))
+```
+
+# Mapping IDs to *S. passalidarum* proteins
+
+Dataset metadata in GEO state that `SPOT_ID` column specifies Spathaspora passalidarum NRRL Y-27907 protein ID number, as available on the genome portal (http://www.jgi.doe.gov/spathaspora/). However, this page now hosts v2 of *S. passalidarum genome* genome assembly, a version which uses different ID numbers. Previous version of the assembly is no longer available.
+
+Therefore, we downloaded oligo (probe) sequences, oligo-to-proteinID reference table, and proteins KOG numbers.
+
+``` {r metadataDownload, eval = FALSE}
+# get the microarray's oligo sequences
+url <- "ftp://ftp.ncbi.nlm.nih.gov/geo/platforms/GPL11nnn/GPL11079/suppl/GPL11079_090803_SP_DW_EXP.ndf.gz"
+destfile <- url %>%
+    basename() %>%
+    file.path(system.file("extdata", package = "spathasporaExpression"), .)
+download.file(url, destfile, method = "auto", quiet = FALSE)
+rm(url, destfile)
+
+# get oligo-to-proteinID reference table
+url <- "ftp://ftp.ncbi.nlm.nih.gov/geo/platforms/GPL11nnn/GPL11079/suppl/GPL11079_SpasProbeMapping.txt.gz"
+destfile <- url %>%
+    basename() %>%
+    file.path(system.file("extdata", package = "spathasporaExpression"), .)
+download.file(url, destfile, method = "auto", quiet = FALSE)
+rm(url, destfile)
+
+# get proteins KOG numbers (JGI login required)
+url <- "https://genome.jgi.doe.gov/portal/Spapa3/download/Spapa3_FM1_KOG.tab.gz"
+destfile <- url %>%
+    basename() %>%
+    file.path(system.file("extdata", package = "spathasporaExpression"), .)
+download.file(url, destfile, method = "auto", quiet = FALSE)
+rm(url, destfile)
+```
+
+```{r loadMetadata, message = FALSE}
+# load the oligo sequences
+os <- "GPL11079_090803_SP_DW_EXP.ndf.gz" %>%
+    system.file("extdata", ., package = "spathasporaExpression") %>%
+    readr::read_tsv() %>%
+    dplyr::select(PROBE_ID, PROBE_SEQUENCE)
+
+# match proteinID with probeID
+ref <- "GPL11079_SpasProbeMapping.txt.gz" %>%
+    system.file("extdata", ., package = "spathasporaExpression") %>%
+    readr::read_tsv() %>%
+    dplyr::left_join(y = os)
+
+# load KOG numbers
+kog <- "Spapa3_FM1_KOG.tab.gz" %>%
+    system.file("extdata", ., package = "spathasporaExpression") %>%
+    readr::read_tsv() %>%
+    dplyr::select(proteinId, kogdefline, kogGroup) %>%
+    dplyr::distinct()
+```
+
+We concatenated sequences of all oligos that map to a proteinID of interest, exported it to a FASTA file and queried JGI BLAST (https://genome.jgi.doe.gov/pages/blast-query.jsf?db=Spapa3). Limitations of JGI BLAST forced us to blast only 100 sequences at a time. Thus, we looked at top 500 most highly expressed genes. We run blastn on a database 'Spathaspora passalidarum v2 best transcripts after filtering', appling word size 11 and scoring matrix BLOSUM62. We asked only for hits with E-values less than 1.0E-20. Results were exported as gzipped Hits Excel Spreadsheet and loaded back into R, and have thus allowe us to decypher proteinIDs.
+
+```{r blast, message = FALSE, warning = FALSE, results = "hide"}
+# JGI BLAST declined to cooperate, allowing me to upload only 100 sequences at a time
+n <- 5
+for (i in 1:n) {
+    top %>%
+        dplyr::select(SPOT_ID) %>%
+        dplyr::slice(((i-1)*100+1):(i*100)) %>% 
+        dplyr::pull() %>% 
+        purrr::map_dfr(cOligos) %>% 
+        dplyr::rename(seq.name = ProteinID, seq.text = sequence) %>% 
+        phylotools::dat2fasta(outfile = file.path(rappdirs::user_data_dir(),
+                                                  paste0("cOligos", ((i-1)*100+1), "-",
+                                                         (i*100), ".fasta")))
+}
+
+# load the results back into R
+blast <- tibble::tibble()
+
+for (i in 1:n) {
+    blast <- "jgi_alignment_hits_cOligos" %>%
+        paste0(((i-1)*100+1), "-", i*100, ".csv.gz") %>%
+        system.file("extdata", ., package = "spathasporaExpression") %>%
+        readr::read_csv() %>%
+        dplyr::group_by(`Query Name`) %>%
+        dplyr::top_n(n = -1, wt = EValue) %>%
+        dplyr::mutate(Hit = as.numeric(stringr::str_extract(Hit, pattern = "[0-9]+$"))) %>%
+        dplyr::select(`Query Name`, Hit, EValue) %>%
+        dplyr::left_join(kog, by = c("Hit" = "proteinId")) %>%
+        dplyr::bind_rows(blast, .)
+}
+```
+
+# Identity of the Most Highly Expressed Genes
+
+Expression levels of proteins were matched with their annotations.
+
+```{r finalTable}
+# create the table with both expression levels and decyphered protein identites
+top_final <- top %>%
+    dplyr::select(-ID, -Nprobes, -t, -B) %>%
+    dplyr::left_join(blast, by = c("SPOT_ID" = "Query Name")) %>%
+    dplyr::rename(JGI_v3 = Hit)
+```
+
+Top 10 most highly expressed proteins are:
+
+```{r top10}
+top_final %>% 
+    head(10) %>%
+    select(kogdefline, JGI_v3, AveExpr, logFC) %>%
+    knitr::kable() %>%
+    kableExtra::kable_styling(fixed_thead = T, position = "left",
+                              bootstrap_options = c("striped", "hover", 
+                                                    "condensed", "responsive"))
+```
+
+Top 15 most highly expressed proteins annotated under metabolism are:
+
+```{r top20metabolism}
+top_final %>% 
+    filter(kogGroup == "METABOLISM") %>% 
+    head(15) %>%
+    select(kogdefline, JGI_v3, AveExpr, logFC) %>%
+    knitr::kable() %>%
+    kableExtra::kable_styling(fixed_thead = T, position = "left",
+                              bootstrap_options = c("striped", "hover", 
+                                                    "condensed", "responsive"))
+```
+
+Based on these data, we constructed *Spathaspora* expression system using promoters of the genes:
+
+```{r ggplot, out.width = "100%", fig.asp = 0.6, message = FALSE}
+carbon <- Sp %>%
+    colnames() %>%
+    as.data.frame() %>%
+    cbind(carbon = Sp$type) %>%
+    rename(sample = ".")
+
+c(42696, 58740, 55577, 41559, 54375, 47756) %>%
+    as.character() %>%
+    Sp[.] %>%
+    exprs() %>%
+    Biostrings::as.data.frame() %>%
+    tibble::rownames_to_column() %>%
+    dplyr::mutate(genes = c("SpENO1", "SpTDH3", "SpPYK1", "SpTAL1", "SpTEF4", "SpTEF1")) %>%
+    tidyr::gather(key = sample, value = value, -rowname, -genes) %>%
+    dplyr::left_join(carbon) %>%
+    mutate(rowname = as.numeric(rowname)) %>%
+    left_join(top_final, by = c("rowname" = "SPOT_ID")) %>%
+    mutate(kogdefline = str_replace(kogdefline, pattern = "\\+", replacement = "a")) %>%
+    ggplot(aes(x = carbon, y = value, colour = carbon)) +
+    geom_boxplot() +
+    geom_point() +
+    xlab("Carbon source") +
+    ylab("log2(Expression)") +
+    scale_x_discrete(labels = c("", "")) +
+    theme_classic() +
+    theme(legend.position = "bottom",
+          axis.text.x = element_text(angle = 60, hjust = 1)) +
+    ggsci::scale_colour_npg() +
+    facet_wrap(~ genes, nrow = 1)
+```
