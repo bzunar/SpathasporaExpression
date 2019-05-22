@@ -2,7 +2,7 @@
 % Please edit documentation in R/hello.R
 \name{cOligos}
 \alias{cOligos}
-\title{Concatenate Oligo Sequences}
+\title{Concatenate Oligo (Probe) Sequences}
 \usage{
 cOligos(id, df = ref, id_column = "ProteinID",
   oligo_seq = "PROBE_SEQUENCE")

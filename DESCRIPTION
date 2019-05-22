@@ -1,18 +1,28 @@
 Package: spathasporaExpression
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Analyse gene expression in yeast Spathaspora passalidarum
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Bojan Zunar
+Maintainer: Bojan Zunar <bojan.zunar@gmail.com>
+Description: Detect highly expressed genes in S. passalidarum using data
+    from custom 385 tiled array
+License: CC0
 Encoding: UTF-8
 LazyData: true
-Suggests: 
+Imports: 
+    Biobase,
     BiocStyle,
+    GEOquery,
+    ggsci,
+    kableExtra,
     knitr,
-    rmarkdown
+    limma,
+    magrittr,
+    oligo,
+    phylotools,
+    rappdirs,
+    rmarkdown,
+    tidyverse
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 6.1.1
