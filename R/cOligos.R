@@ -1,4 +1,4 @@
-#' Concatenate Oligo Sequences
+#' Concatenate Oligo (Probe) Sequences
 #'
 #' Find (and concatenate) oligo sequences that belong to a proteinID of interest.
 #'

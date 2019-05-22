@@ -12,6 +12,7 @@ LazyData: true
 Imports: 
     Biobase,
     BiocStyle,
+    devtools,
     GEOquery,
     ggsci,
     kableExtra,

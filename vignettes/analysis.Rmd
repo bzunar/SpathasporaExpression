@@ -42,16 +42,19 @@ This analysis identifies highly expressed genes in yeast *Spathaspora passalidar
 First, we load the required packages.
 
 ```{r setup, message = FALSE, warning = FALSE}
-library(spathasporaExpression)
-
 library(Biobase)
+library(devtools)
 library(GEOquery)
+library(ggsci)
 library(kableExtra)
 library(limma)
+library(magrittr)
 library(oligo)
 library(phylotools)
 library(rappdirs)
 library(tidyverse)
+
+devtools::load_all()
 ```
 
 We download pre-processed data from the original study and extract those specific for *S. passalidarum*.
