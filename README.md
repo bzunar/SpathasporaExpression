@@ -1,6 +1,7 @@
 # spathasporaExpression
 
 <!-- badges: start -->
+[![Travis build status](https://travis-ci.org/bzunar/spathasporaExpression.svg?branch=master)](https://travis-ci.org/bzunar/spathasporaExpression)
 <!-- badges: end -->
 
 spathasporaExpression is *mostly* a data package that documents analysis of highly constitutively expressed genes in yeast *Spathaspora passalidarum*.
