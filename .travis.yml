@@ -2,3 +2,6 @@
 
 language: R
 cache: packages
+r: bioc-release
+use_bioc: true
+bioc_required: true
