@@ -13,6 +13,7 @@ Imports:
     Biobase,
     BiocStyle,
     devtools,
+    dplyr,
     GEOquery,
     ggsci,
     kableExtra,
