@@ -1,11 +1,11 @@
 Package: spathasporaExpression
 Type: Package
-Title: Analyse gene expression in yeast Spathaspora passalidarum
+Title: Analyse gene expression in yeast Spathaspora passalidarum.
 Version: 0.1.0
 Author: Bojan Zunar
 Maintainer: Bojan Zunar <bojan.zunar@gmail.com>
 Description: Detect highly expressed genes in S. passalidarum using data
-    from custom 385 tiled array
+    from custom 385 tiled array.
 License: CC0
 Encoding: UTF-8
 LazyData: true
@@ -22,6 +22,7 @@ Imports:
     magrittr,
     oligo,
     phylotools,
+    purrr,
     rappdirs,
     rmarkdown,
     tidyverse

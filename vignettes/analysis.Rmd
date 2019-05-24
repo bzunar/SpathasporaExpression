@@ -43,6 +43,7 @@ First, we load the required packages.
 
 ```{r setup, message = FALSE, warning = FALSE}
 library(Biobase)
+library(Biostrings)
 library(devtools)
 library(GEOquery)
 library(ggsci)
@@ -51,7 +52,12 @@ library(limma)
 library(magrittr)
 library(oligo)
 library(phylotools)
+library(purrr)
 library(rappdirs)
+library(reader)
+library(stringr)
+library(tibble)
+library(tidyr)
 library(tidyverse)
 
 devtools::load_all()
