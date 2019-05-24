@@ -43,7 +43,6 @@ First, we load the required packages.
 
 ```{r setup, message = FALSE, warning = FALSE}
 library(Biobase)
-library(Biostrings)
 library(devtools)
 library(GEOquery)
 library(ggsci)
@@ -54,10 +53,6 @@ library(oligo)
 library(phylotools)
 library(purrr)
 library(rappdirs)
-library(readr)
-library(stringr)
-library(tibble)
-library(tidyr)
 library(tidyverse)
 
 devtools::load_all()
@@ -75,6 +70,8 @@ We clean up the data and perform analysis of differential expression, ordering t
 ```{r diffExpression}
 # clean up the data
 Sp$type <- factor(c("glucose", "glucose", "glucose", "xylose", "xylose", "xylose"))
+Sp$growth_protocol_ch1 <- Sp$growth_protocol_ch1 %>% stringi::stri_trans_general("latin-ascii")
+Sp$growth_protocol_ch2 <- Sp$growth_protocol_ch2 %>% stringi::stri_trans_general("latin-ascii")
 
 # differential expression
 design <- stats::model.matrix(~ Sp$type)

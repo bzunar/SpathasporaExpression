@@ -32,6 +32,6 @@ cOligos(49766)
 cOligos("43120")
 
 # more than one proteinIDs
-c("49766", "59238") \%>\% purrr::map_dfr(cOligos)
+purrr::map_dfr(c("49766", "59238"), cOligos)
 
 }

@@ -1,6 +1,6 @@
 Package: spathasporaExpression
 Type: Package
-Title: Analyse gene expression in yeast Spathaspora passalidarum.
+Title: Analyse gene expression in yeast Spathaspora passalidarum
 Version: 0.1.0
 Author: Bojan Zunar
 Maintainer: Bojan Zunar <bojan.zunar@gmail.com>
