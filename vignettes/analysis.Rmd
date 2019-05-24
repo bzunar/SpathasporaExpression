@@ -43,6 +43,7 @@ First, we load the required packages.
 
 ```{r setup, message = FALSE, warning = FALSE}
 library(Biobase)
+library(Biostrings)
 library(devtools)
 library(GEOquery)
 library(ggsci)
@@ -195,7 +196,7 @@ Top 10 most highly expressed proteins are:
 ```{r top10}
 top_final %>% 
     head(10) %>%
-    select(kogdefline, JGI_v3, AveExpr, logFC) %>%
+    dplyr::select(kogdefline, JGI_v3, AveExpr, logFC) %>%
     knitr::kable() %>%
     kableExtra::kable_styling(fixed_thead = T, position = "left",
                               bootstrap_options = c("striped", "hover", 
@@ -206,9 +207,9 @@ Top 15 most highly expressed proteins annotated under metabolism are:
 
 ```{r top20metabolism}
 top_final %>% 
-    filter(kogGroup == "METABOLISM") %>% 
+    dplyr::filter(kogGroup == "METABOLISM") %>% 
     head(15) %>%
-    select(kogdefline, JGI_v3, AveExpr, logFC) %>%
+    dplyr::select(kogdefline, JGI_v3, AveExpr, logFC) %>%
     knitr::kable() %>%
     kableExtra::kable_styling(fixed_thead = T, position = "left",
                               bootstrap_options = c("striped", "hover", 
@@ -222,20 +223,20 @@ carbon <- Sp %>%
     colnames() %>%
     as.data.frame() %>%
     cbind(carbon = Sp$type) %>%
-    rename(sample = ".")
+    dplyr::rename(sample = ".")
 
 c(42696, 58740, 55577, 41559, 54375, 47756) %>%
     as.character() %>%
     Sp[.] %>%
-    exprs() %>%
+    Biobase::exprs() %>%
     Biostrings::as.data.frame() %>%
     tibble::rownames_to_column() %>%
     dplyr::mutate(genes = c("SpENO1", "SpTDH3", "SpPYK1", "SpTAL1", "SpTEF4", "SpTEF1")) %>%
     tidyr::gather(key = sample, value = value, -rowname, -genes) %>%
     dplyr::left_join(carbon) %>%
-    mutate(rowname = as.numeric(rowname)) %>%
-    left_join(top_final, by = c("rowname" = "SPOT_ID")) %>%
-    mutate(kogdefline = str_replace(kogdefline, pattern = "\\+", replacement = "a")) %>%
+    dplyr::mutate(rowname = as.numeric(rowname)) %>%
+    dplyr::left_join(top_final, by = c("rowname" = "SPOT_ID")) %>%
+    dplyr::mutate(kogdefline = str_replace(kogdefline, pattern = "\\+", replacement = "a")) %>%
     ggplot(aes(x = carbon, y = value, colour = carbon)) +
     geom_boxplot() +
     geom_point() +
