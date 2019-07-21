@@ -1,5 +1,5 @@
 ---
-title: "*Spathaspora passalidarum*: Highly and Constitutively Expressed Genes"
+title: "*Spathaspora passalidarum*: FInd Highly Constitutively Expressed Genes"
 author: "Bojan Zunar"
 date: "`r format(Sys.time(), '%d %m %Y')`"
 package: spathasporaExpression
@@ -42,21 +42,13 @@ This analysis identifies highly expressed genes in yeast *Spathaspora passalidar
 First, we load the required packages.
 
 ```{r setup, message = FALSE, warning = FALSE}
-library(Biobase)
-library(Biostrings)
-library(devtools)
-library(GEOquery)
-library(ggsci)
-library(kableExtra)
-library(limma)
-library(magrittr)
-library(oligo)
-library(phylotools)
-library(purrr)
-library(rappdirs)
-library(tidyverse)
 
-devtools::load_all()
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(Biobase, Biostrings, devtools, GEOquery, ggsci, kableExtra,
+               limma, magrittr, oligo, phylotools, purrr, rappdirs, tidyverse)
+
+pacman::p_load_gh("bzunar/spathasporaExpression")
+
 ```
 
 We download pre-processed data from the original study and extract those specific for *S. passalidarum*.

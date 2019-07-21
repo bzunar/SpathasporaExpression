@@ -11,7 +11,7 @@ spathasporaExpression is *mostly* a data package that documents analysis of high
 You can install the released version of spathasporaExpression from [GitHub]() with:
 
 ``` r
-devtools::install.github("spathasporaExpression")
+devtools::install_github("bzunar/spathasporaExpression", build_vignettes = TRUE)
 ```
 For additional details, see the vignette.
 
